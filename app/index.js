@@ -25,3 +25,9 @@ export default async function handler(req, res) {
         res.status(500).json({ error: 'Error fetching the target URL' });
     }
 }
+
+app.listen(3000, () => {
+  console.log('Server is running on http://localhost:3000');
+});
+
+module.exports = app;
