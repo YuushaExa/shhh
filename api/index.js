@@ -27,9 +27,25 @@ app.post('/fetch', async (req, res) => {
 
     try {
         const response = await axios.get(url);
+        // Set the content type based on the response
+        res.set('Content-Type', response.headers['content-type']);
         res.send(response.data);
     } catch (error) {
         res.status(500).send('Error fetching the URL: ' + error.message);
+    }
+});
+
+// Proxy requests for resources
+app.get('/proxy/*', async (req, res) => {
+    const originalUrl = req.params[0];
+    const fullUrl = `http://${originalUrl}`;
+
+    try {
+        const response = await axios.get(fullUrl);
+        res.set('Content-Type', response.headers['content-type']);
+        res.send(response.data);
+    } catch (error) {
+        res.status(500).send('Error fetching the resource: ' + error.message);
     }
 });
 
