@@ -1,5 +1,4 @@
 const express = require('express');
-const axios = require('axios');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -18,35 +17,20 @@ app.get('/', (req, res) => {
 });
 
 // Handle form submission
-app.post('/fetch', async (req, res) => {
+app.post('/fetch', (req, res) => {
     const url = req.body.url;
 
     if (!url) {
         return res.send('Please provide a URL.');
     }
 
-    try {
-        const response = await axios.get(url);
-        // Set the content type based on the response
-        res.set('Content-Type', response.headers['content-type']);
-        res.send(response.data);
-    } catch (error) {
-        res.status(500).send('Error fetching the URL: ' + error.message);
-    }
-});
-
-// Proxy requests for resources
-app.get('/proxy/*', async (req, res) => {
-    const originalUrl = req.params[0];
-    const fullUrl = `http://${originalUrl}`;
-
-    try {
-        const response = await axios.get(fullUrl);
-        res.set('Content-Type', response.headers['content-type']);
-        res.send(response.data);
-    } catch (error) {
-        res.status(500).send('Error fetching the resource: ' + error.message);
-    }
+    // Send an HTML response with an iframe
+    res.send(`
+        <h1>Website Content</h1>
+        <iframe src="${url}" style="width: 100%; height: 100vh;" frameborder="0"></iframe>
+        <br>
+        <a href="/">Go Back</a>
+    `);
 });
 
 app.listen(PORT, () => {
