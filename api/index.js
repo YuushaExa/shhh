@@ -1,33 +1,23 @@
-const express = require('express');
 const puppeteer = require('puppeteer');
-const app = express();
-const PORT = process.env.PORT || 3000;
 
-// Middleware to parse URL-encoded data
-app.use(express.urlencoded({ extended: true }));
+module.exports = async (req, res) => {
+    // Check if the request method is POST
+    if (req.method !== 'POST') {
+        return res.status(405).send('Method Not Allowed');
+    }
 
-// Serve the HTML form
-app.get('/', (req, res) => {
-    res.send(`
-        <form action="/fetch" method="POST">
-            <label for="url">Enter URL:</label>
-            <input type="text" id="url" name="url" required>
-            <button type="submit">Fetch</button>
-        </form>
-    `);
-});
-
-// Handle form submission
-app.post('/fetch', async (req, res) => {
     const url = req.body.url;
 
     if (!url) {
-        return res.send('Please provide a URL.');
+        return res.status(400).send('Please provide a URL.');
     }
 
     try {
-        // Launch Puppeteer and open a new page
-        const browser = await puppeteer.launch();
+        // Launch Puppeteer
+        const browser = await puppeteer.launch({
+            headless: true, // Run in headless mode
+            args: ['--no-sandbox', '--disable-setuid-sandbox'], // Required for Vercel
+        });
         const page = await browser.newPage();
 
         // Navigate to the provided URL
@@ -40,12 +30,10 @@ app.post('/fetch', async (req, res) => {
         await browser.close();
 
         // Send the content back to the client
+        res.setHeader('Content-Type', 'text/html');
         res.send(content);
     } catch (error) {
+        console.error('Error fetching the URL:', error);
         res.status(500).send('Error fetching the URL: ' + error.message);
     }
-});
-
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
-});
+};
