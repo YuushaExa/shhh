@@ -1,3 +1,4 @@
+import puppeteer from "puppeteer";
 import puppeteer from "puppeteer-core";
 import chromium from "@sparticuz/chromium";
 
@@ -16,9 +17,10 @@ export default async (req, res) => {
     try {
         // Launch Puppeteer with the Chromium executable from @sparticuz/chromium
         const browser = await puppeteer.launch({
-            headless: true,
             args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox'],
+            defaultViewport: chromium.defaultViewport,
             executablePath: await chromium.executablePath,
+            headless: true, // Set to true for serverless, can be false for local testing
         });
 
         const page = await browser.newPage();
