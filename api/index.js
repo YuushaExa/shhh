@@ -1,8 +1,8 @@
-const axios = require('axios');
-const https = require('https');
-const { URL } = require('url');
+import puppeteer from "puppeteer-core";
+import chromium from "@sparticuz/chromium";
 
-module.exports = async (req, res) => {
+export default async (req, res) => {
+    // Check if the request method is POST
     if (req.method !== 'POST') {
         return res.status(405).send('Method Not Allowed');
     }
@@ -14,23 +14,27 @@ module.exports = async (req, res) => {
     }
 
     try {
-        // Create an HTTPS agent that ignores SSL certificate errors
-        const agent = new https.Agent({  
-            rejectUnauthorized: false // Ignore SSL certificate errors
+        // Launch Puppeteer with the Chromium executable from @sparticuz/chromium
+        const browser = await puppeteer.launch({
+            headless: true,
+            args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox'],
+            executablePath: await chromium.executablePath,
         });
 
-        // Fetch the HTML content using axios with the custom agent
-        const response = await axios.get(url, { httpsAgent: agent });
-        
-        const baseUrl = new URL(url).origin;
+        const page = await browser.newPage();
 
-        // Modify the HTML content to fix relative URLs
-        let htmlContent = response.data
-            .replace(/(href=")(?!http)([^"]*)/g, `$1${baseUrl}/$2`) // Fix href links
-            .replace(/(src=")(?!http)([^"]*)/g, `$1${baseUrl}/$2`); // Fix src links
+        // Navigate to the provided URL
+        await page.goto(url, { waitUntil: 'networkidle2' });
 
+        // Get the content of the page
+        const content = await page.content();
+
+        // Close the browser
+        await browser.close();
+
+        // Send the content back to the client
         res.setHeader('Content-Type', 'text/html');
-        res.send(htmlContent);
+        res.send(content);
     } catch (error) {
         console.error('Error fetching the URL:', error);
         res.status(500).send('Error fetching the URL: ' + error.message);
