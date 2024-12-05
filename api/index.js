@@ -1,8 +1,8 @@
 const axios = require('axios');
+const https = require('https');
 const { URL } = require('url');
 
 module.exports = async (req, res) => {
-    // Check if the request method is POST
     if (req.method !== 'POST') {
         return res.status(405).send('Method Not Allowed');
     }
@@ -14,10 +14,14 @@ module.exports = async (req, res) => {
     }
 
     try {
-        // Fetch the HTML content using axios
-        const response = await axios.get(url);
+        // Create an HTTPS agent that ignores SSL certificate errors
+        const agent = new https.Agent({  
+            rejectUnauthorized: false // Ignore SSL certificate errors
+        });
+
+        // Fetch the HTML content using axios with the custom agent
+        const response = await axios.get(url, { httpsAgent: agent });
         
-        // Get the base URL for resolving relative links
         const baseUrl = new URL(url).origin;
 
         // Modify the HTML content to fix relative URLs
@@ -25,7 +29,6 @@ module.exports = async (req, res) => {
             .replace(/(href=")(?!http)([^"]*)/g, `$1${baseUrl}/$2`) // Fix href links
             .replace(/(src=")(?!http)([^"]*)/g, `$1${baseUrl}/$2`); // Fix src links
 
-        // Set the content type to text/html and send the response
         res.setHeader('Content-Type', 'text/html');
         res.send(htmlContent);
     } catch (error) {
