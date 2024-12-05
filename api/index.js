@@ -1,44 +1,32 @@
-import puppeteer from "puppeteer";
-import puppeteer from "puppeteer-core";
-import chromium from "@sparticuz/chromium";
+const express = require('express');
+const request = require('request');
+const app = express();
+const PORT = 3000;
 
-export default async (req, res) => {
-    // Check if the request method is POST
-    if (req.method !== 'POST') {
-        return res.status(405).send('Method Not Allowed');
-    }
+// Proxy route
+app.get('/proxy', (req, res) => {
+    const url = 'https://danbooru.donmai.us/posts?tags=money'; // The website you want to load
+    request(url).pipe(res);
+});
 
-    const url = req.body.url;
+// Serve the HTML page with the iframe pointing to the proxy
+app.get('/', (req, res) => {
+    res.send(`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Iframe Example</title>
+        </head>
+        <body>
+            <h1>Website Loaded in Iframe</h1>
+            <iframe src="/proxy" width="600" height="400" style="border: none;"></iframe>
+        </body>
+        </html>
+    `);
+});
 
-    if (!url) {
-        return res.status(400).send('Please provide a URL.');
-    }
-
-    try {
-        // Launch Puppeteer with the Chromium executable from @sparticuz/chromium
-        const browser = await puppeteer.launch({
-            args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox'],
-            defaultViewport: chromium.defaultViewport,
-            executablePath: await chromium.executablePath,
-            headless: true, // Set to true for serverless, can be false for local testing
-        });
-
-        const page = await browser.newPage();
-
-        // Navigate to the provided URL
-        await page.goto(url, { waitUntil: 'networkidle2' });
-
-        // Get the content of the page
-        const content = await page.content();
-
-        // Close the browser
-        await browser.close();
-
-        // Send the content back to the client
-        res.setHeader('Content-Type', 'text/html');
-        res.send(content);
-    } catch (error) {
-        console.error('Error fetching the URL:', error);
-        res.status(500).send('Error fetching the URL: ' + error.message);
-    }
-};
+app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
+});
