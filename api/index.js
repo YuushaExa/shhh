@@ -1,30 +1,22 @@
-const express = require('express');
-const axios = require('axios');
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-app.get('/', async (req, res) => {
-    const url = req.query.url;
-
-    if (!url) {
-        return res.send('Please provide a URL as a query parameter, e.g., /?url=https://example.com');
+export default async function handler(req, res) {
+    const { method, headers, body } = req;
+    const targetUrl = req.query.url; // Get the target URL from query parameters
+    if (!targetUrl) {
+        return res.status(400).json({ error: 'Missing target URL' });
     }
-
     try {
-        const response = await axios.get(url);
-        res.send(response.data);
+        const response = await fetch(targetUrl, {
+            method,
+            headers: {
+                ...headers,
+                host: new URL(targetUrl).host, // Set the host header to the target URL
+            },
+            body: method === 'POST' ? body : undefined,
+        });
+        const data = await response.text();
+        res.status(response.status).send(data);
     } catch (error) {
-        res.status(500).send('Error fetching the URL: ' + error.message);
+        console.error(error);
+        res.status(500).json({ error: 'Error fetching the target URL' });
     }
-});
-
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
-});
-
-
-app.listen(3000, () => {
-  console.log('Server is running on http://localhost:3000');
-});
-
-module.exports = app;
+}
