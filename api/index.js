@@ -1,4 +1,5 @@
 const express = require('express');
+const puppeteer = require('puppeteer');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -17,20 +18,32 @@ app.get('/', (req, res) => {
 });
 
 // Handle form submission
-app.post('/fetch', (req, res) => {
+app.post('/fetch', async (req, res) => {
     const url = req.body.url;
 
     if (!url) {
         return res.send('Please provide a URL.');
     }
 
-    // Send an HTML response with an iframe
-    res.send(`
-        <h1>Website Content</h1>
-        <iframe src="${url}" style="width: 100%; height: 100vh;" frameborder="0"></iframe>
-        <br>
-        <a href="/">Go Back</a>
-    `);
+    try {
+        // Launch Puppeteer and open a new page
+        const browser = await puppeteer.launch();
+        const page = await browser.newPage();
+
+        // Navigate to the provided URL
+        await page.goto(url, { waitUntil: 'networkidle2' });
+
+        // Get the content of the page
+        const content = await page.content();
+
+        // Close the browser
+        await browser.close();
+
+        // Send the content back to the client
+        res.send(content);
+    } catch (error) {
+        res.status(500).send('Error fetching the URL: ' + error.message);
+    }
 });
 
 app.listen(PORT, () => {
