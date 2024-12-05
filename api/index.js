@@ -3,11 +3,26 @@ const axios = require('axios');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.get('/', async (req, res) => {
-    const url = req.query.url;
+// Middleware to parse URL-encoded data
+app.use(express.urlencoded({ extended: true }));
+
+// Serve the HTML form
+app.get('/', (req, res) => {
+    res.send(`
+        <form action="/fetch" method="POST">
+            <label for="url">Enter URL:</label>
+            <input type="text" id="url" name="url" required>
+            <button type="submit">Fetch</button>
+        </form>
+    `);
+});
+
+// Handle form submission
+app.post('/fetch', async (req, res) => {
+    const url = req.body.url;
 
     if (!url) {
-        return res.send('Please provide a URL as a query parameter, e.g., /?url=https://example.com');
+        return res.send('Please provide a URL.');
     }
 
     try {
