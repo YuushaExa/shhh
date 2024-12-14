@@ -1,0 +1,143 @@
+{
+"volume": "1",
+"chapter": "1",
+"title": "The Beginning",
+"scenes": [
+{
+"label": "scene1",
+"background": "bedroom_day.jpg",
+"music": "peaceful_theme.mp3",
+"sfx": "birds_chirping.mp3",
+"dialogue": [
+{
+"text": {
+"ru": "Просыпаешься ты в незнакомом месте.",
+"en": "You wake up in a strange place."
+}
+},
+{
+"text": {
+"ru": "Путешественник, скажи мне свое имя.",
+"en": "Traveler, tell me your name."
+}
+}
+],
+"characters": [],
+"choices": [
+{
+"text": "Look around.",
+"nextScene": "scene2"
+},
+{
+"text": "Go back to sleep.",
+"nextScene": "scene3"
+}
+]
+},
+{
+"label": "scene2",
+"background": "bedroom_day.jpg",
+"music": "peaceful_theme.mp3",
+"sfx": null,
+"dialogue": [
+{
+"text": {
+"ru": "{playerName} видит дверь.",
+"en": "{playerName} see a door."
+},
+"name": "Narrator",
+"expression": "neutral"
+},
+{
+"text": {
+"ru": "Она окрашена в {red}ярко-красный цвет{/red}.",
+"en": "It is painted in a {red}vibrant red color{/red}."
+},
+"name": "Narrator",
+"expression": "neutral"
+}
+],
+"characters": [
+{
+"name": "Narrator",
+"position": "center"
+}
+],
+"choices": [
+{
+"text": "Open the door.",
+"nextScene": "scene4"
+},
+{
+"text": "Ignore it.",
+"nextScene": "scene5"
+}
+]
+},
+{
+"label": "scene3",
+"background": "bedroom_day.jpg",
+"music": "peaceful_theme.mp3",
+"sfx": "snoring.mp3",
+"dialogue": [
+{
+"text": {
+"ru": "Ты засыпаешь и пропускаешь приключение.",
+"en": "You fall back asleep and miss the adventure."
+}
+}
+],
+"characters": [],
+"nextScene": "scene5"
+},
+{
+"label": "scene4",
+"background": "dark_hallway.jpg",
+"music": "suspenseful_theme.mp3",
+"sfx": "door_creak.mp3",
+"dialogue": [
+{
+"text": {
+"ru": "Дверь со скрипом открывается, открывая темный коридор.",
+"en": "The door creaks open, revealing a dark hallway."
+}
+}
+],
+"characters": [
+{
+"name": "Narrator",
+"expression": "neutral",
+"position": "center"
+}
+],
+"choices": [],
+"nextScene": "scene5"
+},
+{
+"label": "scene5",
+"background": "bedroom_day.jpg",
+"music": "peaceful_theme.mp3",
+"sfx": null,
+"dialogue": [
+{
+"text": {
+"ru": "Ты решаешь остаться на месте, гадая, что находится за дверью.",
+"en": "You decide to stay put, wondering what lies beyond."
+}
+},
+{
+"text": "...",
+"go_to": "chapter2"
+}
+],
+"characters": [
+{
+"name": "Narrator",
+"expression": "neutral",
+"position": "center"
+}
+],
+"choices": []
+}
+]
+}
