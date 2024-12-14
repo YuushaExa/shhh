@@ -3,14 +3,180 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>URL Fetcher</title>
+    <title>Visual Novel</title>
+    <style>
+  body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        .episode-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        .episode-list li {
+            margin: 10px 0;
+        }
+        .episode-list a {
+            text-decoration: none;
+            color: #007BFF;
+        }
+        #episodeContent {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #fff;
+            border: 1px solid #ccc;
+        }
+        button.choice-button {
+    color: darkred;
+        }
+        button.next-button {
+    color: green;
+}    </style>
 </head>
 <body>
-    <h1>Fetch Website Content</h1>
-    <form action="/api/fetch" method="POST">
-        <label for="url">Enter URL:</label>
-        <input type="text" id="url" name="url" required>
-        <button type="submit">Fetch</button>
-    </form>
+    <h1>Visual Novel</h1>
+
+    <div id="playerNameInput">
+        <label for="playerName">Enter your name:</label>
+        <input type="text" id="playerName" value="Traveler">
+        <button onclick="setPlayerName()">Set Name</button>
+    </div>
+
+    <ul class="episode-list" id="episodeList">
+        <li><a href="#" data-episode-file="episode1.json">Episode 1: The Beginning</a></li>
+        <li><a href="#" data-episode-file="episode2.json">Episode 2: The Journey Continues</a></li>
+        <!-- Add more episodes here -->
+    </ul>
+
+    <div id="episodeContent"></div>
+<script>
+let currentSceneLabel = null; // Using 'label' instead of 'id'
+let currentEpisode = null;
+let selectedLanguage = 'en'; // Default language
+
+function setPlayerName() {
+    const playerName = document.getElementById('playerName').value;
+    localStorage.setItem('PlayerName', playerName);
+    alert(`Player name set to ${playerName}`);
+}
+
+document.getElementById('episodeList').addEventListener('click', (event) => {
+    if (event.target.tagName === 'A') {
+        event.preventDefault();
+        const episodeFile = event.target.getAttribute('data-episode-file');
+        loadEpisode(episodeFile);
+    }
+});
+
+function loadEpisode(file) {
+    fetch(file)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            currentEpisode = data;
+            replacePlayerNamesAndFormatInEpisode(currentEpisode);
+            currentSceneLabel = currentEpisode.scenes[0].label; // Use 'label'
+            displayScene(currentEpisode, currentSceneLabel);
+        })
+        .catch(error => {
+            console.error('There was a problem with the fetch operation:', error);
+            document.getElementById('episodeContent').innerText = 'Failed to load episode. Please try again later.';
+        });
+}
+
+function replacePlayerNamesAndFormatInEpisode(episode) {
+    const playerName = localStorage.getItem('PlayerName') || 'Traveler';
+    episode.scenes.forEach(scene => {
+        scene.dialogue.forEach(dialogueItem => {
+            if (typeof dialogueItem.text === 'object') {
+                // Replace in both languages
+                if (dialogueItem.text.en) {
+                    dialogueItem.text.en = dialogueItem.text.en.replace(/{playerName}/g, playerName).replace(/{red}(.*?)\{\/red}/g, '<span style="color: red;">$1</span>');
+                }
+                if (dialogueItem.text.ru) {
+                    dialogueItem.text.ru = dialogueItem.text.ru.replace(/{playerName}/g, playerName).replace(/{red}(.*?)\{\/red}/g, '<span style="color: red;">$1</span>');
+                }
+            } else if (typeof dialogueItem.text === 'string') {
+                // Replace in the single text property
+                dialogueItem.text = dialogueItem.text.replace(/{playerName}/g, playerName).replace(/{red}(.*?)\{\/red}/g, '<span style="color: red;">$1</span>');
+            }
+        });
+        if (scene.choices) {
+            scene.choices.forEach(choice => {
+                if (typeof choice.text === 'string') {
+                    choice.text = choice.text.replace(/{playerName}/g, playerName).replace(/{red}(.*?)\{\/red}/g, '<span style="color: red;">$1</span>');
+                }
+            });
+        }
+    });
+}
+
+function displayScene(episode, sceneLabel) {
+    const episodeContent = document.getElementById('episodeContent');
+    const scene = episode.scenes.find(s => s.label === sceneLabel); // Use 'label'
+    if (scene) {
+        let content = `<h2>${episode.title}</h2>`;
+
+        // Display dialogue
+        scene.dialogue.forEach(dialogueItem => {
+            if (dialogueItem.text) {
+                if (typeof dialogueItem.text === 'object') {
+                    content += `<p>${dialogueItem.text[selectedLanguage]}</p>`;
+                } else {
+                    content += `<p>${dialogueItem.text}</p>`;
+                }
+            }
+        });
+
+        // Display choices
+        if (scene.choices && scene.choices.length > 0) {
+            content += scene.choices.map(choice =>
+                `<button class="choice-button" data-next-scene="${choice.nextScene}">${choice.text}</button>`
+            ).join('');
+        } else if (scene.nextScene) {
+            content += `<button class="next-button" data-next-scene="${scene.nextScene}">Next</button>`;
+        }
+
+        // Handle 'go_to' for chapter transition (this is a workaround)
+        const lastDialogue = scene.dialogue[scene.dialogue.length - 1];
+        if (lastDialogue.go_to) {
+            content += `<button class="next-episode-button" data-next-episode="episode${lastDialogue.go_to.replace('chapter', '')}.json">Next Episode</button>`;
+        }
+
+        episodeContent.innerHTML = content;
+    }
+}
+
+document.getElementById('episodeContent').addEventListener('click', (event) => {
+    const target = event.target;
+    if (target.classList.contains('choice-button')) {
+        loadScene(target.getAttribute('data-next-scene'));
+    } else if (target.classList.contains('next-button')) {
+        loadScene(target.getAttribute('data-next-scene'));
+    } else if (target.classList.contains('next-episode-button')) {
+        const nextEpisode = target.getAttribute('data-next-episode');
+        loadEpisode(nextEpisode);
+    }
+});
+
+function loadScene(sceneLabel) {
+    const scene = currentEpisode.scenes.find(s => s.label === sceneLabel); // Use 'label'
+    if (scene) {
+        displayScene(currentEpisode, sceneLabel);
+    } else {
+        console.error('Scene not found:', sceneLabel);
+    }
+}
+</script>
+    <script src="userScripts.js" defer></script>
 </body>
 </html>
